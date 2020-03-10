@@ -33,22 +33,70 @@ def correct_links_and_media(path):
         content = ""
         for line in file.readlines():
             line = line.replace("///", "://")
-            content+=line
-        for med in media.findall(line):
-            if "youtube" in med:
-                line = fr'''
-        <div class="video">
-            <figure>
-                <iframe width="640" height="480" src="//www.youtube.com/embed/{med.split('>')[1].split('?')[0] }" frameborder="0" allowfullscreen></iframe>
-            </figure>
-        </div>'''
-            else:
-                line = "![]("+"https://ccextractor.org/_media/" + med.strip().replace("{{","").replace("}}","")+")"
+            for med in media.findall(line):
+                if "youtube" in med:
+                    line = fr'''<div class="video">
+                <figure>
+                    <iframe width="640" height="480" src="//www.youtube.com/embed/{med.split('>')[1].split('?')[0] }" frameborder="0" allowfullscreen></iframe>
+                </figure>
+            </div>'''
+                else:
+                    line = "![]("+"https://ccextractor.org/_media/" + med.strip().replace("{{","").replace("}}","")+")"
 
             content+=line
 
     # Removing //s
-    content = content.replace("\\\\", "")
+    # content = content.replace("\\\\", "")
     # Removing the meta title
-    content = re.sub(r"~~META((.|\n)*)~~", "", content)
+    nocontent = re.sub(r"^~~META((.|\n)*)~~", "", content)
+    open(path, 'w').write(nocontent.strip())
+
+
+def correct_relative_links(path):
+    with open(path, 'r') as file:
+        content = ""
+        for line in file.readlines():
+        # for line in content.splitlines():
+            if "public" in line:
+                for search in p.findall(line):
+                    if "https" not in search and "public" in search:
+                        last_update = get_last_update(search.strip().replace("/", ":"))
+                        if last_update is False:
+                            last_update = "2020/20/20"
+                        line = line.replace(
+                            search,
+                            # f"/ccextractor-wiki-test/{last_update}/" + "-".join(search.split("/")) + ")"
+                            f"/ccextractor-wiki-test/{last_update}/" + search.strip().replace("/", "-") + ")"
+                        )
+            # for std_idx, end_idx in zip(
+            #     findall("(", line), findall(")", line)
+            # ):
+            #     link = line[st_idx+1: end_idx]
+            #     if "public" in link:
+            #         last_update = get_last_update(link.strip().replace("/", ":"))
+            #         if last_update is False:
+            #             last_update = "2020/20/20"
+            #         line = line.replace(
+            #             link,
+            #             f"/ccextractor-wiki-test/{last_update}/" + "-".join(link.split("/")) + ")"
+
+            #         )
+            content+=line
+    content = re.sub(r"^~~META((.|\n)*)~~", "", content)
     open(path.replace('txt', 'md'), 'w').write(content.strip())
+
+def get_last_update(endpoint):
+    print(endpoint)
+    url = "https://www.ccextractor.org/"+endpoint+"?do=revisions"
+    res = requests.get(url)
+    if res.status_code == 200:
+        content = html(res.text, 'lxml')
+    try:
+        return content.find_all("span", {"class": "date"})[0].text.split()[0]
+    except IndexError:
+        print ("Can't get", url)
+        return False
+
+def findall(p, s):
+    import re
+    return [m.start() for m in re.finditer(p, s)]

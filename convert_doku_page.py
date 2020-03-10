@@ -1,6 +1,6 @@
 import os
 import argparse
-from utils import (get_dokuwiki_code, convert_from_doku, correct_links_and_media)
+from utils import (get_dokuwiki_code, convert_from_doku, correct_links_and_media, correct_relative_links)
 
 TEMP_DIR = "tmp"
 
@@ -22,4 +22,7 @@ if args.url:
     filename = get_dokuwiki_code(url, TEMP_DIR)
 
 convert_from_doku(path=filename)
-correct_links_and_media(path=filename)
+correct_links_and_media(path=filename.replace("txt", "md"))
+correct_relative_links(path=filename.replace("txt", "md"))
+
+print(filename)
