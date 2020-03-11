@@ -1,6 +1,7 @@
 import os
 import re
 import requests
+import subprocess
 
 from bs4 import BeautifulSoup as html
 
@@ -24,11 +25,14 @@ def get_dokuwiki_code(url, save_dir):
             # return dokutext
     else:
         print("Skipping file already exists", f"{save_dir}/{last_update}-{filename}.txt")
+    # Deleting the .txt
+    os.remove(f"{save_dir}/{last_update}-{filename}.txt")
     return f"{save_dir}/{last_update}-{filename}.txt"
 
 
 def convert_from_doku(path):
-    os.system(f"php convert.php {path}")
+    subprocess.run(f"php convert.php {path}".split(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    # os.system(f"php convert.php {path}")
 
 def correct_links_and_media(path):
     with open(path, 'r') as file:
@@ -71,19 +75,6 @@ def correct_relative_links(path):
                             # f"/ccextractor-wiki-test/{last_update}/" + "-".join(search.split("/")) + ")"
                             f"/ccextractor-wiki-test/{last_update}/" + search.strip().replace("/", "-").lower() + ")"
                         )
-            # for std_idx, end_idx in zip(
-            #     findall("(", line), findall(")", line)
-            # ):
-            #     link = line[st_idx+1: end_idx]
-            #     if "public" in link:
-            #         last_update = get_last_update(link.strip().replace("/", ":"))
-            #         if last_update is False:
-            #             last_update = "2020/20/20"
-            #         line = line.replace(
-            #             link,
-            #             f"/ccextractor-wiki-test/{last_update}/" + "-".join(link.split("/")) + ")"
-
-            #         )
             content+=line
     content = re.sub(r"^~~META((.|\n)*)~~", "", content)
     open(path.replace('txt', 'md'), 'w').write(content.strip())
